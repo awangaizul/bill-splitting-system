@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BillSplitter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    body { background: #f5f7fa; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
+    .app { width: 100%; max-width: 420px; background: #fff; border-radius: 24px; box-shadow: 0 8px 40px rgba(0,0,0,0.08); min-height: 700px; position: relative; overflow: hidden; }
+    .screen { display: none; padding: 24px; animation: fadeIn .25s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+    h2 { font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; }
+    p { color: #6b7280; font-size: 14px; }
+    .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+
+    input, select { width: 100%; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 15px; outline: none; transition: .2s; background: #fafafa; }
+    input:focus, select:focus { border-color: #6366f1; background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-warning { background: #f59e0b; color: #fff; }
+    .btn-outline { background: transparent; border: 1.5px solid #e5e7eb; color: #374151; }
+    .btn-outline:hover { border-color: #6366f1; color: #6366f1; }
+    .btn-sm { padding: 10px 16px; font-size: 13px; width: auto; }
+
+    .card { background: #fff; border: 1.5px solid #f0f0f5; border-radius: 16px; padding: 16px; margin-bottom: 12px; transition: .2s; }
+    .card:hover { border-color: #e0e0ef; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-title { font-weight: 600; color: #1a1a2e; font-size: 15px; }
+    .card-subtitle { font-size: 13px; color: #6b7280; }
+    .card-amount { font-weight: 700; font-size: 18px; color: #1a1a2e; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .badge-paid { background: #d1fae5; color: #065f46; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-group { background: #e0e7ff; color: #3730a3; }
+
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .top-bar .user-info { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; color: #fff; }
+    .avatar-payer { background: #6366f1; }
+    .avatar-debtor { background: #10b981; }
+    .avatar-admin { background: #f59e0b; }
+    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #374151; padding: 4px; }
+
+    .tab-bar { display: flex; gap: 4px; background: #f3f4f6; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+    .tab { flex: 1; padding: 10px; text-align: center; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6b7280; cursor: pointer; transition: .2s; }
+    .tab.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-weight: 600; }
+
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .item-row:last-child { border-bottom: none; }
+    .item-name { font-size: 14px; color: #1a1a2e; }
+    .item-price { font-weight: 600; color: #1a1a2e; }
+
+    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 999; display: none; max-width: 360px; text-align: center; }
+    .notification.show { display: block; animation: slideDown .3s ease; }
+    @keyframes slideDown { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+
+    .modal-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: center; padding: 24px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 24px; width: 100%; max-height: 80vh; overflow-y: auto; }
+    .modal h2 { margin-bottom: 16px; }
+    .modal .btn { margin-top: 12px; }
+    .modal-close { float: right; background: none; border: none; font-size: 24px; cursor: pointer; color: #9ca3af; }
+
+    .upload-area { border: 2px dashed #d1d5db; border-radius: 16px; padding: 32px 16px; text-align: center; cursor: pointer; transition: .2s; margin-bottom: 16px; }
+    .upload-area:hover { border-color: #6366f1; background: #f5f3ff; }
+    .upload-area svg { margin-bottom: 8px; }
+    .upload-area p { font-size: 13px; }
+    .upload-area .file-name { font-weight: 500; color: #6366f1; margin-top: 8px; }
+
+    .proof-img { width: 100%; border-radius: 12px; border: 1px solid #e5e7eb; margin: 12px 0; max-height: 200px; object-fit: cover; }
+
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .admin-table th { text-align: left; padding: 10px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; }
+    .admin-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
+    .admin-table .status-active { color: #10b981; font-weight: 500; }
+    .admin-table .status-inactive { color: #ef4444; font-weight: 500; }
+
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+    .flex { display: flex; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 13px; }
+    .text-muted { color: #6b7280; }
+    .divider { height: 1px; background: #f0f0f5; margin: 16px 0; }
+
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo h1 { font-size: 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo p { font-size: 13px; margin-top: 4px; }
+
+    .login-error { color: #ef4444; font-size: 13px; margin-top: 8px; display: none; }
+
+    .group-code { background: #f3f4f6; padding: 12px; border-radius: 10px; text-align: center; font-size: 20px; font-weight: 700; letter-spacing: 4px; color: #1a1a2e; margin: 12px 0; }
+    .invite-link { background: #f5f3ff; padding: 10px 14px; border-radius: 10px; font-size: 13px; color: #6366f1; word-break: break-all; margin: 8px 0; }
+
+    .claim-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .claim-item:last-child { border-bottom: none; }
+    .claim-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: #6366f1; cursor: pointer; }
+    .claim-item .item-info { flex: 1; }
+    .claim-item .item-info .name { font-size: 14px; font-weight: 500; }
+    .claim-item .item-info .price { font-size: 13px; color: #6b7280; }
+    .claim-item input[type="number"] { width: 70px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; text-align: center; }
+
+    .bg-gradient { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .bg-gradient h2 { color: #fff; margin-bottom: 4px; }
+    .bg-gradient .amount { font-size: 32px; font-weight: 800; }
+    .bg-gradient .sub { color: rgba(255,255,255,0.7); font-size: 13px; }
+
+    .bottom-nav { display: flex; background: #fff; border-top: 1px solid #f0f0f5; padding: 8px 0; margin: 0 -24px -24px; }
+    .bottom-nav button { flex: 1; background: none; border: none; padding: 8px; font-size: 11px; color: #9ca3af; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: .2s; }
+    .bottom-nav button.active { color: #6366f1; }
+    .bottom-nav button svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+
+<div class="notification" id="notification"></div>
+
+<div class="app" id="app">
+
+  <!-- LOGIN SCREEN -->
+  <div class="screen active" id="screen-login">
+    <div class="logo">
+      <h1>BillSplitter</h1>
+      <p>Split bills, not friendships</p>
+    </div>
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="mb-16">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter username" autocomplete="off" required>
+      </div>
+      <div class="mb-16">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
+      <div class="login-error" id="loginError">Invalid username or password.</div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+  </div>
+
+  <!-- PAYER DASHBOARD -->
+  <div class="screen" id="screen-payer-dashboard">
+    <div class="top-bar">
+      <div class="user-info">
+        <div class="avatar avatar-payer">P</div>
+        <div><strong id="payerName">Payer</strong><p class="text-sm text-muted">Dashboard</p></div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="bg-gradient">
+      <p class="sub">Total Owed to You</p>
+      <div class="amount" id="payerTotalOwed">$0.00</div>
+      <p class="sub mt-8"><span id="payerGroupCount">0</span> active groups</p>
+    </div>
+
+    <div class="flex-between mb-16">
+      <h2>Your Groups</h2>
+      <button class="btn btn-sm btn-primary" onclick="showScreen('screen-create-group')">+ Create Group</button>
+    </div>
+    <div id="payerGroupList"></div>
+  </div>
+
+  <!-- CREATE GROUP -->
+  <div class="screen" id="screen-create-group">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-payer-dashboard')">&larr;</button>
+      <h2>Create Group</h2>
+      <div></div>
+    </div>
+    <form id="createGroupForm" onsubmit="return handleCreateGroup(event)">
+      <div class="mb-16">
+        <label for="groupName">Group Name</label>
+        <input type="text" id="groupName" placeholder="e.g. Dinner at Italian Place" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Group</button>
+    </form>
+    <div id="groupInviteInfo" style="display:none;" class="mt-24">
+      <h2>Invite Members</h2>
+      <p class="text-sm text-muted mb-12">Share this code or link with debtors:</p>
+      <div class="group-code" id="groupCode">ABC123</div>
+      <div class="invite-link" id="inviteLink">https://billsplitter.app/join/ABC123</div>
+      <button class="btn btn-secondary mt-16" onclick="copyInvite()">Copy Invite Link</button>
+    </div>
+  </div>
+
+  <!-- PAYER GROUP DETAIL -->
+  <div class="screen" id="screen-payer-group">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-payer-dashboard')">&larr;</button>
+      <h2 id="payerGroupDetailName">Group</h2>
+      <button style="background:none;border:none;color:#ef4444;font-size:20px;cursor:pointer;padding:4px 8px;" onclick="deleteGroup(currentGroupId)" title="Delete group">&times;</button>
+    </div>
+    <p class="text-sm text-muted mb-16">Code: <strong id="payerGroupDetailCode">N/A</strong></p>
+    <div class="flex gap-8 mb-16">
+      <button class="btn btn-primary btn-sm" onclick="showScreen('screen-scan-bill')">Scan / Upload Bill</button>
+      <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-send-notification')">Send Notification</button>
+    </div>
+    <h2>Bills</h2>
+    <div id="payerGroupBills"></div>
+    <h2 class="mt-16">Members</h2>
+    <div id="payerGroupMembers"></div>
+    <h2 class="mt-16">Pending Confirmations</h2>
+    <div id="payerPendingConfirmations"></div>
+  </div>
+
+  <!-- SCAN / UPLOAD BILL -->
+  <div class="screen" id="screen-scan-bill">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-payer-group')">&larr;</button>
+      <h2>Scan / Upload Bill</h2>
+      <div></div>
+    </div>
+    <p class="subtitle">Scan a receipt or upload an image (JPEG/PNG, max 5 MB)</p>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('billCamera').click()">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <p>Open Camera to Scan Receipt</p>
+      <div class="file-name" id="fileName"></div>
+    </div>
+    <p class="text-sm text-muted text-center mt-8" style="cursor:pointer;color:#6366f1;" onclick="document.getElementById('billInput').click()">Or upload from gallery</p>
+    <input type="file" id="billCamera" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)">
+    <input type="file" id="billInput" accept="image/png,image/jpeg" style="display:none" onchange="handleFileSelect(event)">
+    <div id="billWarning" class="text-sm text-muted mb-16" style="display:none; color:#ef4444;">Image too large. Max 5 MB.</div>
+    <form id="billForm" onsubmit="return handleUploadBill(event)" style="display:none;">
+      <div class="mb-16">
+        <label>Bill Total (RM)</label>
+        <input type="number" id="billTotal" step="0.01" min="0.01" placeholder="0.00" required>
+      </div>
+      <button type="submit" class="btn btn-success">Upload Bill</button>
+    </form>
+  </div>
+
+  <!-- CONFIRM PAYMENT -->
+  <div class="screen" id="screen-confirm-payment">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-payer-group')">&larr;</button>
+      <h2>Confirm Payment</h2>
+      <div></div>
+    </div>
+    <div id="confirmPaymentContent"></div>
+  </div>
+
+  <!-- DEBTOR DASHBOARD -->
+  <div class="screen" id="screen-debtor-dashboard">
+    <div class="top-bar">
+      <div class="user-info">
+        <div class="avatar avatar-debtor">D</div>
+        <div><strong id="debtorName">Debtor</strong><p class="text-sm text-muted">Dashboard</p></div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="bg-gradient">
+      <p class="sub">Total Outstanding</p>
+      <div class="amount" id="debtorTotalOutstanding">$0.00</div>
+      <p class="sub mt-8">Settled: <span id="debtorTotalSettled">$0.00</span></p>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchDebtorTab('groups',this)">Groups</button>
+      <button class="tab" onclick="switchDebtorTab('debt',this)">Total Debt</button>
+    </div>
+    <div id="debtorGroupList"></div>
+    <div id="debtorDebtBreakdown" style="display:none;"></div>
+  </div>
+
+  <!-- DEBTOR GROUP DETAIL / CLAIM BILL -->
+  <div class="screen" id="screen-debtor-group">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-debtor-dashboard')">&larr;</button>
+      <h2 id="debtorGroupDetailName">Group</h2>
+      <div></div>
+    </div>
+    <h2>Bills</h2>
+    <div id="debtorGroupBills"></div>
+    <div id="claimBillContent" class="mt-16"></div>
+  </div>
+
+  <!-- CLAIM ITEMS -->
+  <div class="screen" id="screen-claim-items">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-debtor-group')">&larr;</button>
+      <h2>Claim Items</h2>
+      <div></div>
+    </div>
+    <p class="subtitle">Select the items you are responsible for</p>
+    <div id="claimItemsList"></div>
+    <div class="flex-between mt-16" style="padding-top:12px;border-top:2px solid #f3f4f6;">
+      <span class="text-muted">Your total:</span>
+      <span class="card-amount" id="claimTotal">$0.00</span>
+    </div>
+    <button class="btn btn-success mt-16" onclick="submitClaim()">Submit Claim</button>
+  </div>
+
+  <!-- SEND TRANSACTION PROOF -->
+  <div class="screen" id="screen-send-proof">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-debtor-group')">&larr;</button>
+      <h2>Send Transaction Proof</h2>
+      <div></div>
+    </div>
+    <p class="subtitle">Upload a screenshot of your bank transfer or acknowledge cash payment</p>
+    <div class="upload-area" onclick="document.getElementById('proofInput').click()">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <p>Tap to upload receipt screenshot</p>
+      <div class="file-name" id="proofFileName"></div>
+    </div>
+    <input type="file" id="proofInput" accept="image/png,image/jpeg" style="display:none" onchange="handleProofSelect(event)">
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-primary" onclick="submitProof('transfer')">Submit Proof</button>
+      <button class="btn btn-secondary" onclick="submitProof('cash')">Acknowledge Cash</button>
+    </div>
+  </div>
+
+  <!-- SEND NOTIFICATION -->
+  <div class="screen" id="screen-send-notification">
+    <div class="top-bar">
+      <button class="back-btn" onclick="goBackFromNotification()">&larr;</button>
+      <h2>Send Notification</h2>
+      <div></div>
+    </div>
+    <form id="notificationForm" onsubmit="return handleSendNotification(event)">
+      <div class="mb-16">
+        <label for="notifGroup">Select Group</label>
+        <select id="notifGroup" required></select>
+      </div>
+      <div class="mb-16">
+        <label for="notifMember">Select Member</label>
+        <select id="notifMember" required></select>
+      </div>
+      <div class="mb-16">
+        <label for="notifMessage">Message</label>
+        <textarea id="notifMessage" rows="3" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:14px;resize:none;" placeholder="Type your reminder message..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div class="screen" id="screen-admin-dashboard">
+    <div class="top-bar">
+      <div class="user-info">
+        <div class="avatar avatar-admin">A</div>
+        <div><strong id="adminName">Admin</strong><p class="text-sm text-muted">Administration</p></div>
+      </div>
+      <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchAdminTab('accounts',this)">Accounts</button>
+      <button class="tab" onclick="switchAdminTab('backup',this)">Backup</button>
+    </div>
+
+    <div id="adminAccountsTab">
+      <h2>All Accounts</h2>
+      <button class="btn btn-sm btn-primary mb-16" onclick="showCreateAccount()">+ Create Account</button>
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="adminAccountTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="adminBackupTab" style="display:none;">
+      <h2>System Data Backup</h2>
+      <p class="text-sm text-muted mb-16">Create a backup of all system data including accounts, groups, and transactions.</p>
+      <div id="backupInfo" class="card">
+        <p class="text-sm">Last backup: <span id="lastBackupTime">Never</span></p>
+        <p class="text-sm text-muted">Total records: <span id="backupRecordCount">0</span></p>
+      </div>
+      <button class="btn btn-primary mt-16" onclick="performBackup()">Create Backup Now</button>
+    </div>
+  </div>
+
+  <!-- ADMIN CREATE/EDIT ACCOUNT MODAL -->
+  <div class="modal-overlay" id="adminAccountModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('adminAccountModal')">&times;</button>
+      <h2 id="adminAccountModalTitle">Create Account</h2>
+      <form onsubmit="return handleAdminAccount(event)">
+        <input type="hidden" id="adminEditUsername">
+        <div class="mb-16">
+          <label for="adminAccountUsername">Username</label>
+          <input type="text" id="adminAccountUsername" required>
+        </div>
+        <div class="mb-16">
+          <label for="adminAccountPassword">Password</label>
+          <input type="password" id="adminAccountPassword">
+        </div>
+        <div class="mb-16">
+          <label for="adminAccountRole">Role</label>
+          <select id="adminAccountRole">
+            <option value="payer">Payer</option>
+            <option value="debtor">Debtor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="mb-16">
+          <label for="adminAccountStatus">Status</label>
+          <select id="adminAccountStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== DATA STORE ======
+const DB_KEY = 'billsplitter_data';
+
+const defaultData = () => ({
+  users: [
+    { username: 'awang',  password: 'awang',  role: 'payer',  status: 'active' },
+    { username: 'nopal',  password: 'nopal',  role: 'debtor', status: 'active' },
+    { username: 'cipon',  password: 'cipon',  role: 'debtor', status: 'active' },
+    { username: 'admin',  password: 'admin',   role: 'admin',  status: 'active' },
+  ],
+  groups: [
+    { id: 1, name: 'Dinner at Italian Place', code: 'DIN67', payer: 'awang', members: [{ username: 'nopal', owed: 67 }, { username: 'cipon', owed: 30 }], createdAt: '2026-06-28T10:00:00.000Z' },
+    { id: 2, name: 'pfc', code: 'PFC01', payer: 'awang', members: [{ username: 'cipon', owed: 10 }, { username: 'nopal', owed: 6.50 }], createdAt: '2026-06-28T10:00:00.000Z' },
+  ],
+  bills: [
+    { id: 1, groupId: 1, total: 67, image: null, status: 'pending', items: [
+      { id: 1, name: 'Spaghetti', price: 20 },
+      { id: 2, name: 'Lamb Chop', price: 25 },
+      { id: 3, name: 'Ayam Gepuk', price: 12 },
+      { id: 4, name: 'Strawberry Matcha', price: 10 },
+    ], createdAt: '2026-06-28T10:05:00.000Z' },
+    { id: 2, groupId: 1, total: 67, image: null, status: 'pending', items: [
+      { id: 1, name: 'Spaghetti', price: 20 },
+      { id: 2, name: 'Lamb Chop', price: 25 },
+      { id: 3, name: 'Ayam Gepuk', price: 12 },
+      { id: 4, name: 'Strawberry Matcha', price: 10 },
+    ], createdAt: '2026-06-28T10:10:00.000Z' },
+    { id: 3, groupId: 2, total: 16.50, image: null, status: 'pending', items: [
+      { id: 1, name: 'Ayam Gepuk', price: 7 },
+      { id: 2, name: 'Milo', price: 3 },
+      { id: 3, name: 'Nasi Ayam', price: 6 },
+      { id: 4, name: 'Ais Kosong', price: 0.50 },
+    ], createdAt: '2026-06-28T10:15:00.000Z' },
+  ],
+  claims: [
+    { id: 1, billId: 1, groupId: 1, debtor: 'cipon', items: [{ id: 1, name: 'Spaghetti', price: 20, qty: 1 }, { id: 4, name: 'Strawberry Matcha', price: 10, qty: 1 }], total: 30, createdAt: '2026-06-28T10:06:00.000Z' },
+    { id: 2, billId: 3, groupId: 2, debtor: 'cipon', items: [{ id: 1, name: 'Ayam Gepuk', price: 7, qty: 1 }, { id: 2, name: 'Milo', price: 3, qty: 1 }], total: 10, createdAt: '2026-06-28T10:16:00.000Z' },
+    { id: 3, billId: 3, groupId: 2, debtor: 'nopal', items: [{ id: 3, name: 'Nasi Ayam', price: 6, qty: 1 }, { id: 4, name: 'Ais Kosong', price: 0.50, qty: 1 }], total: 6.50, createdAt: '2026-06-28T10:16:00.000Z' },
+  ],
+  proofs: [],
+  notifications: [],
+  nextGroupId: 3,
+  nextBillId: 4,
+  nextClaimId: 4,
+  nextProofId: 2,
+});
+
+let DB;
+
+function loadDB() {
+  const raw = localStorage.getItem(DB_KEY);
+  if (raw) {
+    try { DB = JSON.parse(raw); } catch(e) { DB = defaultData(); }
+  } else {
+    DB = defaultData();
+  }
+}
+
+function saveDB() {
+  localStorage.setItem(DB_KEY, JSON.stringify(DB));
+}
+
+loadDB();
+
+// ====== CURRENT USER ======
+let currentUser = null;
+let currentGroupId = null;
+let currentBillId = null;
+let selectedBillId = null;
+
+// ====== UTILITY ======
+function notify(msg, isError) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.style.background = isError ? '#ef4444' : '#1a1a2e';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ====== LOGIN ======
+function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('username').value.trim().toLowerCase();
+  const password = document.getElementById('password').value;
+  const user = DB.users.find(u => u.username === username && u.password === password);
+  if (!user) {
+    document.getElementById('loginError').style.display = 'block';
+    return false;
+  }
+  if (user.status !== 'active') {
+    notify('Account is deactivated.', true);
+    return false;
+  }
+  document.getElementById('loginError').style.display = 'none';
+  currentUser = user;
+  if (user.role === 'payer') enterPayerDashboard();
+  else if (user.role === 'debtor') enterDebtorDashboard();
+  else if (user.role === 'admin') enterAdminDashboard();
+  return false;
+}
+
+function logout() {
+  currentUser = null;
+  currentGroupId = null;
+  showScreen('screen-login');
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+}
+
+// ====== PAYER DASHBOARD ======
+function enterPayerDashboard() {
+  document.getElementById('payerName').textContent = currentUser.username;
+  showScreen('screen-payer-dashboard');
+  renderPayerDashboard();
+}
+
+function renderPayerDashboard() {
+  const groups = DB.groups.filter(g => g.payer === currentUser.username);
+  let totalOwed = 0;
+  groups.forEach(g => {
+    g.members.forEach(m => { totalOwed += m.owed || 0; });
+  });
+  document.getElementById('payerTotalOwed').textContent = 'RM' + totalOwed.toFixed(2);
+  document.getElementById('payerGroupCount').textContent = groups.length;
+
+  const list = document.getElementById('payerGroupList');
+  list.innerHTML = groups.map(g => {
+    const total = g.members.reduce((s,m) => s + (m.owed || 0), 0);
+    return `<div class="card" style="position:relative;">
+      <div onclick="openPayerGroup(${g.id})" style="cursor:pointer;">
+        <div class="card-header">
+          <span class="card-title">${esc(g.name)}</span>
+          <span class="badge badge-group">${g.members.length} members</span>
+        </div>
+        <div class="flex-between">
+          <span class="card-subtitle">Code: ${g.code}</span>
+          <span class="card-amount">RM${total.toFixed(2)}</span>
+        </div>
+      </div>
+      <button onclick="event.stopPropagation();deleteGroup(${g.id})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:#ef4444;font-size:18px;cursor:pointer;padding:4px 8px;" title="Delete group">&times;</button>
+    </div>`;
+  }).join('');
+}
+
+function openPayerGroup(groupId) {
+  currentGroupId = groupId;
+  const g = DB.groups.find(x => x.id === groupId);
+  document.getElementById('payerGroupDetailName').textContent = g.name;
+  document.getElementById('payerGroupDetailCode').textContent = g.code;
+
+  const bills = DB.bills.filter(b => b.groupId === groupId);
+  document.getElementById('payerGroupBills').innerHTML = bills.length
+    ? bills.map(b => {
+        const claims = DB.claims.filter(c => c.billId === b.id);
+        return `<div class="card" style="position:relative;">
+          <div class="flex-between">
+            <span class="card-title">Bill #${b.id}</span>
+            <span class="badge ${b.status === 'settled' ? 'badge-paid' : 'badge-pending'}">${b.status}</span>
+          </div>
+          <span class="card-subtitle">Total: RM${b.total.toFixed(2)}</span>
+          <div class="divider"></div>
+          ${b.items.map(item => {
+            const claim = claims.find(c => c.items.some(i => i.id === item.id));
+            const claimedBy = claim ? claim.debtor : null;
+            return `<div class="flex-between" style="padding:4px 0;font-size:13px;">
+              <span>${esc(item.name)}</span>
+              <span>RM${item.price.toFixed(2)} ${claimedBy ? `<span class="badge badge-paid" style="font-size:11px;">${claimedBy}</span>` : ''}</span>
+            </div>`;
+          }).join('')}
+          <button onclick="deleteBill(${b.id})" style="position:absolute;top:8px;right:8px;background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;padding:2px 6px;" title="Delete bill">&times;</button>
+        </div>`;
+      }).join('')
+    : '<p class="text-sm text-muted">No bills yet.</p>';
+
+  document.getElementById('payerGroupMembers').innerHTML = g.members.length
+    ? g.members.map(m => {
+        const approved = DB.proofs.some(p => p.groupId === groupId && p.debtor === m.username && p.status === 'approved');
+        const pending = DB.proofs.some(p => p.groupId === groupId && p.debtor === m.username && p.status === 'pending');
+        const color = approved ? '#10b981' : pending ? '#f59e0b' : '#6b7280';
+        const label = approved ? 'paid' : pending ? 'pending' : '';
+        return `<div class="flex-between" style="padding:8px 0;border-bottom:1px solid #f3f4f6;">
+          <span style="color:${color};font-weight:${approved||pending?'600':'400'}">${esc(m.username)} ${label ? `<span style="font-size:11px;font-weight:400;">(${label})</span>` : ''}</span>
+          <span class="card-subtitle">RM${(m.owed || 0).toFixed(2)}</span>
+        </div>`;
+      }).join('')
+    : '<p class="text-sm text-muted">No members yet.</p>';
+
+  // Pending confirmations
+  const pendingProofs = DB.proofs.filter(p => p.groupId === groupId && p.status === 'pending');
+  document.getElementById('payerPendingConfirmations').innerHTML = pendingProofs.length
+    ? pendingProofs.map(p => {
+        const b = DB.bills.find(x => x.id === p.billId);
+        return `<div class="card">
+          <div class="flex-between">
+            <span class="card-title">${esc(p.debtor)}</span>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+          <p class="text-sm text-muted">Amount: RM${(p.amount || 0).toFixed(2)}</p>
+          ${p.image ? `<img src="${p.image}" class="proof-img" alt="Proof">` : '<p class="text-sm text-muted">Cash payment acknowledged</p>'}
+          <div class="flex gap-8 mt-8">
+            <button class="btn btn-sm btn-success" onclick="approveProof(${p.id})">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="rejectProof(${p.id})">Reject</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<p class="text-sm text-muted">No pending confirmations.</p>';
+
+  showScreen('screen-payer-group');
+}
+
+function approveProof(proofId) {
+  const p = DB.proofs.find(x => x.id === proofId);
+  if (!p) return;
+  p.status = 'approved';
+  const b = DB.bills.find(x => x.id === p.billId);
+  if (b) b.status = 'settled';
+  saveDB();
+  notify('Payment approved!');
+  openPayerGroup(currentGroupId);
+}
+
+function rejectProof(proofId) {
+  const p = DB.proofs.find(x => x.id === proofId);
+  if (!p) return;
+  p.status = 'rejected';
+  saveDB();
+  notify('Payment rejected.');
+  openPayerGroup(currentGroupId);
+}
+
+function deleteGroup(groupId) {
+  if (!confirm('Delete this group and all associated data?')) return;
+  DB.groups = DB.groups.filter(g => g.id !== groupId);
+  DB.bills = DB.bills.filter(b => b.groupId !== groupId);
+  DB.claims = DB.claims.filter(c => c.groupId !== groupId);
+  DB.proofs = DB.proofs.filter(p => p.groupId !== groupId);
+  DB.notifications = DB.notifications.filter(n => n.groupId !== groupId);
+  saveDB();
+  notify('Group deleted.');
+  showScreen('screen-payer-dashboard');
+  renderPayerDashboard();
+}
+
+function deleteBill(billId) {
+  if (!confirm('Delete this bill and associated claims?')) return;
+  DB.bills = DB.bills.filter(b => b.id !== billId);
+  DB.claims = DB.claims.filter(c => c.billId !== billId);
+  DB.proofs = DB.proofs.filter(p => p.billId !== billId);
+  saveDB();
+  notify('Bill deleted.');
+  openPayerGroup(currentGroupId);
+}
+
+// ====== CREATE GROUP ======
+function handleCreateGroup(e) {
+  e.preventDefault();
+  const name = document.getElementById('groupName').value.trim();
+  if (!name) return false;
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const id = DB.nextGroupId++;
+  DB.groups.push({
+    id, name, code, payer: currentUser.username,
+    members: [], createdAt: new Date().toISOString()
+  });
+  saveDB();
+  document.getElementById('groupCode').textContent = code;
+  document.getElementById('inviteLink').textContent = `https://billsplitter.app/join/${code}`;
+  document.getElementById('groupInviteInfo').style.display = 'block';
+  document.getElementById('groupName').value = '';
+  notify(`Group "${name}" created!`);
+  return false;
+}
+
+function copyInvite() {
+  const link = document.getElementById('inviteLink').textContent;
+  navigator.clipboard.writeText(link).then(() => notify('Invite link copied!'));
+}
+
+// ====== SCAN / UPLOAD BILL ======
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    document.getElementById('billWarning').style.display = 'block';
+    document.getElementById('billForm').style.display = 'none';
+    return;
+  }
+  document.getElementById('billWarning').style.display = 'none';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('billForm').style.display = 'block';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    window._billImage = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleUploadBill(e) {
+  e.preventDefault();
+  const total = parseFloat(document.getElementById('billTotal').value);
+  if (isNaN(total) || total <= 0) return false;
+  const id = DB.nextBillId++;
+  DB.bills.push({
+    id, groupId: currentGroupId, total, image: window._billImage || null,
+    status: 'pending', items: generateItems(total), createdAt: new Date().toISOString()
+  });
+  // Add debtor as member if not already
+  const g = DB.groups.find(x => x.id === currentGroupId);
+  if (g && !g.members.find(m => m.username === 'debtor')) {
+    g.members.push({ username: 'debtor', owed: total });
+  } else if (g) {
+    const m = g.members.find(x => x.username === 'debtor');
+    if (m) m.owed = (m.owed || 0) + total;
+  }
+  saveDB();
+  document.getElementById('billTotal').value = '';
+  document.getElementById('billForm').style.display = 'none';
+  document.getElementById('fileName').textContent = '';
+  notify('Bill uploaded!');
+  openPayerGroup(currentGroupId);
+  return false;
+}
+
+function generateItems(total) {
+  const names = ['Pizza', 'Pasta', 'Salad', 'Drinks', 'Dessert', 'Bread', 'Soup', 'Coffee', 'Wine', 'Burger', 'Fries', 'Sushi'];
+  const count = 3 + Math.floor(Math.random() * 4);
+  const items = [];
+  let sum = 0;
+  for (let i = 0; i < count; i++) {
+    const price = i === count - 1 ? total - sum : Math.round((total / count + (Math.random() - 0.5) * (total / count * 0.4)) * 100) / 100;
+    items.push({ id: i + 1, name: names[i % names.length] + (i >= names.length ? ' ' + (Math.floor(i/names.length)+1) : ''), price: Math.max(0.01, price) });
+    sum += items[i].price;
+  }
+  // Adjust rounding
+  const diff = Math.round((total - sum) * 100) / 100;
+  if (Math.abs(diff) > 0.01) items[items.length - 1].price += diff;
+  return items;
+}
+
+// ====== DEBTOR DASHBOARD ======
+function enterDebtorDashboard() {
+  document.getElementById('debtorName').textContent = currentUser.username;
+  showScreen('screen-debtor-dashboard');
+  renderDebtorDashboard();
+}
+
+function renderDebtorDashboard() {
+  // Calculate totals
+  const allClaims = DB.claims.filter(c => c.debtor === currentUser.username);
+  let settled = 0, outstanding = 0;
+  allClaims.forEach(c => {
+    const p = DB.proofs.find(x => x.claimId === c.id);
+    if (p && p.status === 'approved') settled += c.total;
+    else outstanding += c.total;
+  });
+  // Also sum from group member debts
+  DB.groups.forEach(g => {
+    const m = g.members.find(x => x.username === currentUser.username);
+    if (m && m.owed) outstanding += m.owed;
+  });
+  // Subtract what's already counted in claims to avoid double counting
+  const claimTotal = allClaims.reduce((s,c) => s + c.total, 0);
+  const settledFromProofs = allClaims.filter(c => {
+    const p = DB.proofs.find(x => x.claimId === c.id);
+    return p && p.status === 'approved';
+  }).reduce((s,c) => s + c.total, 0);
+  outstanding = Math.max(0, outstanding);
+  settled = settledFromProofs;
+
+  document.getElementById('debtorTotalOutstanding').textContent = 'RM' + outstanding.toFixed(2);
+  document.getElementById('debtorTotalSettled').textContent = 'RM' + settled.toFixed(2);
+
+  switchDebtorTab('groups');
+}
+
+function switchDebtorTab(tab, btn) {
+  document.querySelectorAll('#screen-debtor-dashboard .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const gl = document.getElementById('debtorGroupList');
+  const dd = document.getElementById('debtorDebtBreakdown');
+  if (tab === 'groups') {
+    gl.style.display = 'block';
+    dd.style.display = 'none';
+    renderDebtorGroups();
+  } else {
+    gl.style.display = 'none';
+    dd.style.display = 'block';
+    renderDebtorDebtBreakdown();
+  }
+}
+
+function renderDebtorGroups() {
+  const groups = DB.groups.filter(g => g.members.find(m => m.username === currentUser.username));
+  const list = document.getElementById('debtorGroupList');
+  list.innerHTML = groups.map(g => {
+    const m = g.members.find(x => x.username === currentUser.username);
+    const bcount = DB.bills.filter(b => b.groupId === g.id).length;
+    return `<div class="card" onclick="openDebtorGroup(${g.id})" style="cursor:pointer;">
+      <div class="flex-between">
+        <span class="card-title">${esc(g.name)}</span>
+        <span class="badge badge-group">${bcount} bills</span>
+      </div>
+      <div class="flex-between">
+        <span class="card-subtitle">Your share: RM${(m?.owed || 0).toFixed(2)}</span>
+        <span class="card-amount" style="font-size:14px;">Tap to view</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDebtorDebtBreakdown() {
+  const groups = DB.groups.filter(g => g.members.find(m => m.username === currentUser.username));
+  const dd = document.getElementById('debtorDebtBreakdown');
+  if (!groups.length) {
+    dd.innerHTML = '<p class="text-sm text-muted">No groups yet.</p>';
+    return;
+  }
+  dd.innerHTML = groups.map(g => {
+    const m = g.members.find(x => x.username === currentUser.username);
+    const claims = DB.claims.filter(c => c.debtor === currentUser.username && c.groupId === g.id);
+    const settled = claims.filter(c => {
+      const p = DB.proofs.find(x => x.claimId === c.id);
+      return p && p.status === 'approved';
+    }).reduce((s,c) => s + c.total, 0);
+    const pending = claims.filter(c => {
+      const p = DB.proofs.find(x => x.claimId === c.id);
+      return !p || p.status !== 'approved';
+    }).reduce((s,c) => s + c.total, 0);
+    return `<div class="card">
+      <div class="card-header">
+        <span class="card-title">${esc(g.name)}</span>
+      </div>
+      <div class="flex-between">
+        <span class="text-muted">Outstanding: <strong>RM${Math.max(0, (m?.owed || 0) - settled).toFixed(2)}</strong></span>
+        <span class="badge badge-paid">Settled: RM${settled.toFixed(2)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDebtorGroup(groupId) {
+  currentGroupId = groupId;
+  const g = DB.groups.find(x => x.id === groupId);
+  document.getElementById('debtorGroupDetailName').textContent = g.name;
+  const bills = DB.bills.filter(b => b.groupId === groupId);
+  document.getElementById('debtorGroupBills').innerHTML = bills.map(b => {
+    const allClaims = DB.claims.filter(c => c.billId === b.id);
+    const myClaims = allClaims.filter(c => c.debtor === currentUser.username);
+    const hasClaimed = myClaims.length > 0;
+    return `<div class="card">
+      <div class="flex-between">
+        <span class="card-title">Bill #${b.id}</span>
+        <span class="badge ${b.status === 'settled' ? 'badge-paid' : 'badge-pending'}">${b.status}</span>
+      </div>
+      <span class="card-subtitle">Total: RM${b.total.toFixed(2)}</span>
+      <div class="divider"></div>
+      ${b.items.map(item => {
+        const claim = allClaims.find(c => c.items.some(i => i.id === item.id));
+        const claimedBy = claim ? claim.debtor : null;
+        const isMine = myClaims.some(c => c.items.some(i => i.id === item.id));
+        return `<div class="flex-between" style="padding:4px 0;font-size:13px;">
+          <span>${esc(item.name)}</span>
+          <span>RM${item.price.toFixed(2)} ${claimedBy ? `<span class="badge ${isMine ? 'badge-paid' : 'badge-pending'}" style="font-size:11px;">${claimedBy}</span>` : '<span class="badge badge-pending" style="font-size:11px;">unclaimed</span>'}</span>
+        </div>`;
+      }).join('')}
+      <div class="mt-8 flex gap-8">
+        ${!hasClaimed ? `<button class="btn btn-sm btn-primary" onclick="openClaimItems(${b.id})">Claim Items</button>` : '<span class="badge badge-paid">You claimed</span>'}
+        <button class="btn btn-sm btn-secondary" onclick="openSendProof(${b.id})">Send Proof</button>
+      </div>
+    </div>`;
+  }).join('');
+  showScreen('screen-debtor-group');
+}
+
+// ====== CLAIM ITEMS ======
+function openClaimItems(billId) {
+  currentBillId = billId;
+  const b = DB.bills.find(x => x.id === billId);
+  if (!b) return;
+  const list = document.getElementById('claimItemsList');
+  list.innerHTML = b.items.map(item => `
+    <div class="claim-item">
+      <input type="checkbox" data-id="${item.id}" data-price="${item.price}" onchange="updateClaimTotal()">
+      <div class="item-info">
+        <div class="name">${esc(item.name)}</div>
+        <div class="price">RM${item.price.toFixed(2)}</div>
+      </div>
+      <input type="number" value="1" min="1" max="99" data-id="${item.id}" onchange="updateClaimTotal()" style="width:50px;">
+    </div>
+  `).join('');
+  updateClaimTotal();
+  showScreen('screen-claim-items');
+}
+
+function updateClaimTotal() {
+  let total = 0;
+  document.querySelectorAll('#claimItemsList input[type="checkbox"]:checked').forEach(cb => {
+    const price = parseFloat(cb.dataset.price);
+    const qtyInput = document.querySelector(`#claimItemsList input[type="number"][data-id="${cb.dataset.id}"]`);
+    const qty = parseInt(qtyInput?.value) || 1;
+    total += price * qty;
+  });
+  document.getElementById('claimTotal').textContent = 'RM' + total.toFixed(2);
+}
+
+function submitClaim() {
+  const b = DB.bills.find(x => x.id === currentBillId);
+  if (!b) return;
+  const selected = [];
+  document.querySelectorAll('#claimItemsList input[type="checkbox"]:checked').forEach(cb => {
+    const id = parseInt(cb.dataset.id);
+    const item = b.items.find(i => i.id === id);
+    const qtyInput = document.querySelector(`#claimItemsList input[type="number"][data-id="${id}"]`);
+    const qty = parseInt(qtyInput?.value) || 1;
+    if (item) selected.push({ ...item, qty });
+  });
+  if (!selected.length) { notify('Select at least one item.', true); return; }
+  const total = selected.reduce((s, i) => s + i.price * i.qty, 0);
+  DB.claims.push({
+    id: DB.nextClaimId++,
+    billId: currentBillId,
+    groupId: currentGroupId,
+    debtor: currentUser.username,
+    items: selected,
+    total: Math.round(total * 100) / 100,
+    createdAt: new Date().toISOString()
+  });
+  const g = DB.groups.find(x => x.id === currentGroupId);
+  if (g) {
+    const m = g.members.find(x => x.username === currentUser.username);
+    if (m) m.owed = (m.owed || 0) + total;
+    else g.members.push({ username: currentUser.username, owed: total });
+  }
+  saveDB();
+  notify('Claim submitted!');
+  openDebtorGroup(currentGroupId);
+}
+
+// ====== SEND PROOF ======
+function openSendProof(billId) {
+  currentBillId = billId;
+  document.getElementById('proofFileName').textContent = '';
+  window._proofImage = null;
+  showScreen('screen-send-proof');
+}
+
+function handleProofSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { notify('File too large. Max 5 MB.', true); return; }
+  document.getElementById('proofFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(ev) { window._proofImage = ev.target.result; };
+  reader.readAsDataURL(file);
+}
+
+function submitProof(type) {
+  const claim = DB.claims.find(c => c.billId === currentBillId && c.debtor === currentUser.username);
+  if (!claim) { notify('You must claim items first.', true); return; }
+  DB.proofs.push({
+    id: DB.nextProofId++,
+    claimId: claim.id,
+    billId: currentBillId,
+    groupId: currentGroupId,
+    debtor: currentUser.username,
+    amount: claim.total,
+    image: type === 'transfer' ? (window._proofImage || null) : null,
+    paymentType: type,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  });
+  saveDB();
+  notify('Proof submitted! Awaiting payer approval.');
+  openDebtorGroup(currentGroupId);
+}
+
+// ====== SEND NOTIFICATION ======
+function goBackFromNotification() {
+  if (currentUser.role === 'payer') showScreen('screen-payer-group');
+  else showScreen('screen-debtor-group');
+}
+
+function handleSendNotification(e) {
+  e.preventDefault();
+  const gid = parseInt(document.getElementById('notifGroup').value);
+  const member = document.getElementById('notifMember').value;
+  const message = document.getElementById('notifMessage').value.trim();
+  if (!message) return false;
+  DB.notifications.push({
+    id: DB.notifications.length + 1,
+    groupId: gid,
+    from: currentUser.username,
+    to: member,
+    message,
+    createdAt: new Date().toISOString()
+  });
+  saveDB();
+  notify('Notification sent!');
+  document.getElementById('notifMessage').value = '';
+  goBackFromNotification();
+  return false;
+}
+
+// Populate notification form when shown
+document.addEventListener('DOMContentLoaded', function() {
+  // Intercept showScreen for notification screen
+  const origShow = showScreen;
+  showScreen = function(id) {
+    if (id === 'screen-send-notification') {
+      populateNotificationForm();
+    }
+    origShow(id);
+  };
+});
+
+function populateNotificationForm() {
+  const groupSelect = document.getElementById('notifGroup');
+  groupSelect.innerHTML = '<option value="">Select group</option>';
+  let groups;
+  if (currentUser.role === 'payer') {
+    groups = DB.groups.filter(g => g.payer === currentUser.username);
+  } else {
+    groups = DB.groups.filter(g => g.members.find(m => m.username === currentUser.username));
+  }
+  groups.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.name;
+    if (currentGroupId && g.id === currentGroupId) opt.selected = true;
+    groupSelect.appendChild(opt);
+  });
+  updateNotifMembers();
+  groupSelect.onchange = updateNotifMembers;
+}
+
+function updateNotifMembers() {
+  const gid = parseInt(document.getElementById('notifGroup').value);
+  const memberSelect = document.getElementById('notifMember');
+  memberSelect.innerHTML = '<option value="">Select member</option>';
+  if (!gid) return;
+  const g = DB.groups.find(x => x.id === gid);
+  if (!g) return;
+  const allMembers = [...new Set([
+    g.payer,
+    ...g.members.map(m => m.username)
+  ].filter(u => u !== currentUser.username))];
+  allMembers.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = u;
+    memberSelect.appendChild(opt);
+  });
+}
+
+// ====== ADMIN DASHBOARD ======
+function enterAdminDashboard() {
+  document.getElementById('adminName').textContent = currentUser.username;
+  showScreen('screen-admin-dashboard');
+  renderAdminAccounts();
+}
+
+function switchAdminTab(tab, btn) {
+  document.querySelectorAll('#screen-admin-dashboard .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('adminAccountsTab').style.display = tab === 'accounts' ? 'block' : 'none';
+  document.getElementById('adminBackupTab').style.display = tab === 'backup' ? 'block' : 'none';
+  if (tab === 'backup') renderBackupTab();
+}
+
+function renderAdminAccounts() {
+  const tbody = document.getElementById('adminAccountTableBody');
+  tbody.innerHTML = DB.users.map(u => `
+    <tr>
+      <td>${esc(u.username)}</td>
+      <td>${esc(u.role)}</td>
+      <td class="${u.status === 'active' ? 'status-active' : 'status-inactive'}">${u.status}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="editAdminAccount('${esc(u.username)}')">Edit</button>
+        <button class="btn btn-sm ${u.status === 'active' ? 'btn-danger' : 'btn-success'}" onclick="toggleAdminAccount('${esc(u.username)}')">
+          ${u.status === 'active' ? 'Deactivate' : 'Activate'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function showCreateAccount() {
+  document.getElementById('adminAccountModalTitle').textContent = 'Create Account';
+  document.getElementById('adminEditUsername').value = '';
+  document.getElementById('adminAccountUsername').value = '';
+  document.getElementById('adminAccountUsername').disabled = false;
+  document.getElementById('adminAccountPassword').value = '';
+  document.getElementById('adminAccountPassword').required = true;
+  document.getElementById('adminAccountRole').value = 'payer';
+  document.getElementById('adminAccountStatus').value = 'active';
+  document.getElementById('adminAccountModal').classList.add('show');
+}
+
+function editAdminAccount(username) {
+  const u = DB.users.find(x => x.username === username);
+  if (!u) return;
+  document.getElementById('adminAccountModalTitle').textContent = 'Edit Account';
+  document.getElementById('adminEditUsername').value = username;
+  document.getElementById('adminAccountUsername').value = username;
+  document.getElementById('adminAccountUsername').disabled = true;
+  document.getElementById('adminAccountPassword').value = '';
+  document.getElementById('adminAccountPassword').required = false;
+  document.getElementById('adminAccountPassword').placeholder = 'Leave blank to keep';
+  document.getElementById('adminAccountRole').value = u.role;
+  document.getElementById('adminAccountStatus').value = u.status;
+  document.getElementById('adminAccountModal').classList.add('show');
+}
+
+function handleAdminAccount(e) {
+  e.preventDefault();
+  const editUsername = document.getElementById('adminEditUsername').value;
+  const username = document.getElementById('adminAccountUsername').value.trim().toLowerCase();
+  const password = document.getElementById('adminAccountPassword').value;
+  const role = document.getElementById('adminAccountRole').value;
+  const status = document.getElementById('adminAccountStatus').value;
+
+  if (editUsername) {
+    // Edit existing
+    const u = DB.users.find(x => x.username === editUsername);
+    if (u) {
+      u.role = role;
+      u.status = status;
+      if (password) u.password = password;
+    }
+    notify('Account updated!');
+  } else {
+    // Create new
+    if (DB.users.find(u => u.username === username)) {
+      notify('Username already exists.', true);
+      return false;
+    }
+    if (!password) { notify('Password required.', true); return false; }
+    DB.users.push({ username, password, role, status });
+    notify('Account created!');
+  }
+  saveDB();
+  closeModal('adminAccountModal');
+  renderAdminAccounts();
+  return false;
+}
+
+function toggleAdminAccount(username) {
+  const u = DB.users.find(x => x.username === username);
+  if (!u) return;
+  u.status = u.status === 'active' ? 'inactive' : 'active';
+  saveDB();
+  notify(`Account ${u.status === 'active' ? 'activated' : 'deactivated'}.`);
+  renderAdminAccounts();
+}
+
+function renderBackupTab() {
+  const lastBackup = localStorage.getItem('billsplitter_last_backup');
+  document.getElementById('lastBackupTime').textContent = lastBackup || 'Never';
+  const total = DB.users.length + DB.groups.length + DB.bills.length + DB.claims.length + DB.proofs.length + DB.notifications.length;
+  document.getElementById('backupRecordCount').textContent = total;
+}
+
+function performBackup() {
+  const backup = {
+    timestamp: new Date().toISOString(),
+    data: DB
+  };
+  localStorage.setItem('billsplitter_backup_' + Date.now(), JSON.stringify(backup));
+  localStorage.setItem('billsplitter_last_backup', new Date().toLocaleString());
+  notify('Backup created successfully!');
+  renderBackupTab();
+}
+
+// ====== HELPERS ======
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ====== DARK MODE / RESPONSIVE ======
+// Nothing extra needed - already mobile-first
+</script>
+</body>
+</html>
