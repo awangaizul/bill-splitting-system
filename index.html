@@ -439,40 +439,23 @@ const defaultData = () => ({
     { username: 'admin',  password: 'admin',   role: 'admin',  status: 'active' },
   ],
   groups: [
-    { id: 1, name: 'Dinner at Italian Place', code: 'DIN67', payer: 'awang', members: [{ username: 'nopal', owed: 67 }, { username: 'cipon', owed: 30 }], createdAt: '2026-06-28T10:00:00.000Z' },
-    { id: 2, name: 'pfc', code: 'PFC01', payer: 'awang', members: [{ username: 'cipon', owed: 10 }, { username: 'nopal', owed: 6.50 }], createdAt: '2026-06-28T10:00:00.000Z' },
+    { id: 1, name: 'foodcourt sri serdang', code: 'FC01', payer: 'awang', members: [{ username: 'cipon', owed: 0 }, { username: 'nopal', owed: 0 }], createdAt: '2026-06-28T10:00:00.000Z' },
   ],
   bills: [
-    { id: 1, groupId: 1, total: 67, image: null, status: 'pending', items: [
-      { id: 1, name: 'Spaghetti', price: 20 },
-      { id: 2, name: 'Lamb Chop', price: 25 },
-      { id: 3, name: 'Ayam Gepuk', price: 12 },
-      { id: 4, name: 'Strawberry Matcha', price: 10 },
+    { id: 1, groupId: 1, total: 23, image: null, status: 'pending', items: [
+      { id: 1, name: 'ayam gepuk', price: 12 },
+      { id: 2, name: 'teh ais', price: 3 },
+      { id: 3, name: 'nasi ayam', price: 6 },
+      { id: 4, name: 'teh o ais', price: 2 },
     ], createdAt: '2026-06-28T10:05:00.000Z' },
-    { id: 2, groupId: 1, total: 67, image: null, status: 'pending', items: [
-      { id: 1, name: 'Spaghetti', price: 20 },
-      { id: 2, name: 'Lamb Chop', price: 25 },
-      { id: 3, name: 'Ayam Gepuk', price: 12 },
-      { id: 4, name: 'Strawberry Matcha', price: 10 },
-    ], createdAt: '2026-06-28T10:10:00.000Z' },
-    { id: 3, groupId: 2, total: 16.50, image: null, status: 'pending', items: [
-      { id: 1, name: 'Ayam Gepuk', price: 7 },
-      { id: 2, name: 'Milo', price: 3 },
-      { id: 3, name: 'Nasi Ayam', price: 6 },
-      { id: 4, name: 'Ais Kosong', price: 0.50 },
-    ], createdAt: '2026-06-28T10:15:00.000Z' },
   ],
-  claims: [
-    { id: 1, billId: 1, groupId: 1, debtor: 'cipon', items: [{ id: 1, name: 'Spaghetti', price: 20, qty: 1 }, { id: 4, name: 'Strawberry Matcha', price: 10, qty: 1 }], total: 30, createdAt: '2026-06-28T10:06:00.000Z' },
-    { id: 2, billId: 3, groupId: 2, debtor: 'cipon', items: [{ id: 1, name: 'Ayam Gepuk', price: 7, qty: 1 }, { id: 2, name: 'Milo', price: 3, qty: 1 }], total: 10, createdAt: '2026-06-28T10:16:00.000Z' },
-    { id: 3, billId: 3, groupId: 2, debtor: 'nopal', items: [{ id: 3, name: 'Nasi Ayam', price: 6, qty: 1 }, { id: 4, name: 'Ais Kosong', price: 0.50, qty: 1 }], total: 6.50, createdAt: '2026-06-28T10:16:00.000Z' },
-  ],
+  claims: [],
   proofs: [],
   notifications: [],
-  nextGroupId: 3,
-  nextBillId: 4,
-  nextClaimId: 4,
-  nextProofId: 2,
+  nextGroupId: 2,
+  nextBillId: 2,
+  nextClaimId: 1,
+  nextProofId: 1,
 });
 
 let DB;
